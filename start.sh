@@ -1,5 +1,0 @@
-#!/bin/sh
-set -e
-
-PORT_TO_USE="${PORT:-8000}"
-exec python main.py --serve-only --host 0.0.0.0 --port "$PORT_TO_USE"
