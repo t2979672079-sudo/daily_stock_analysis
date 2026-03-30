@@ -47,7 +47,7 @@ COPY bot/ ./bot/
 COPY patch/ ./patch/
 COPY src/ ./src/
 COPY strategies/ ./strategies/
-COPY --from=web-builder /app/apps/dsa-web/dist ./static/
+COPY --from=web-builder /app/static ./static/
 
 RUN mkdir -p /app/data /app/logs /app/reports
 
