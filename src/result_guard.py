@@ -42,28 +42,30 @@ def trend_from_score(score: int) -> str:
         return "看空"
     if score <= 59:
         return "震荡"
+    if score <= 74:
+        return "谨慎看多"
     return "看多"
 
 
 def apply_score_guard(result: Dict[str, Any]) -> Dict[str, Any]:
     """
     统一分数-动作绑定：
-    - 先钳制 sentimentScore
-    - 再按分数强制重算 operationAdvice / trendPrediction
+    - 先钳制 sentiment_score
+    - 再按分数强制重算 operation_advice / trend_prediction
     """
-    score = clamp_score(result.get("sentimentScore"))
-    result["sentimentScore"] = score
+    score = clamp_score(result.get("sentiment_score"))
+    result["sentiment_score"] = score
 
-    result["operationAdvice"] = advice_from_score(score)
-    result["trendPrediction"] = trend_from_score(score)
+    result["operation_advice"] = advice_from_score(score)
+    result["trend_prediction"] = trend_from_score(score)
 
-    # decisionType 也同步，避免前后矛盾
+    # decision_type 同步
     if score <= 29:
-        result["decisionType"] = "sell"
+        result["decision_type"] = "sell"
     elif score <= 59:
-        result["decisionType"] = "hold"
+        result["decision_type"] = "hold"
     else:
-        result["decisionType"] = "buy"
+        result["decision_type"] = "buy"
 
     return result
 
@@ -91,11 +93,10 @@ def validate_stock_identity_and_price(
     2. 关键价位不能离当前价过远
     """
     text_blocks = [
-        str(result.get("analysisSummary", "") or ""),
-        str(result.get("coreConclusion", "") or ""),
-        str(result.get("keyPoints", "") or ""),
-        str(result.get("riskWarning", "") or ""),
-        str(result.get("buyReason", "") or ""),
+        str(result.get("analysis_summary", "") or ""),
+        str(result.get("key_points", "") or ""),
+        str(result.get("risk_warning", "") or ""),
+        str(result.get("buy_reason", "") or ""),
     ]
 
     dashboard = result.get("dashboard") or {}
@@ -103,10 +104,6 @@ def validate_stock_identity_and_price(
     text_blocks.append(str(core.get("one_sentence", "") or ""))
 
     full_text = "\n".join(text_blocks)
-
-    if stock_name and stock_name not in full_text:
-        # 名字不一定总会出现，先不直接失败
-        pass
 
     if other_names:
         for name in other_names:
@@ -117,7 +114,6 @@ def validate_stock_identity_and_price(
     if cp is not None and cp > 0:
         candidates = _extract_price_candidates(full_text)
         for p in candidates:
-            # 容忍百分比 35%，超出则高度可疑
             if abs(p - cp) / cp > 0.35:
                 return False, f"检测到疑似错位价位: {p} (current={cp})"
 
@@ -134,11 +130,11 @@ def apply_data_completeness_guard(
     if data_complete:
         return result
 
-    score = clamp_score(result.get("sentimentScore"))
+    score = clamp_score(result.get("sentiment_score"))
     score = min(score, 59)
-    result["sentimentScore"] = score
-    result["operationAdvice"] = "观望"
-    result["trendPrediction"] = "震荡"
-    result["decisionType"] = "hold"
+    result["sentiment_score"] = score
+    result["operation_advice"] = "观望"
+    result["trend_prediction"] = "震荡"
+    result["decision_type"] = "hold"
 
     return result
