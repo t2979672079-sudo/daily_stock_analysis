@@ -1256,7 +1256,24 @@ class GeminiAnalyzer:
 
             persist_llm_usage(llm_usage, model_used, call_type="analysis", stock_code=code)
 
-            logger.info(f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}")
+            # 统一后处理护栏：
+            # 1. 数据不完整时自动降级
+            # 2. 分数与动作强绑定，避免高分却观望/低分却看多
+            data_complete = bool(result.success)
+
+            result_dict = result.to_dict()
+            result_dict = apply_data_completeness_guard(result_dict, data_complete=data_complete)
+            result_dict = apply_score_guard(result_dict)
+
+            # 回写到 AnalysisResult，保证前端和日志看到的是一致结果
+            result.sentiment_score = int(result_dict.get("sentimentScore", result.sentiment_score))
+            result.trend_prediction = str(result_dict.get("trendPrediction", result.trend_prediction))
+            result.operation_advice = str(result_dict.get("operationAdvice", result.operation_advice))
+            result.decision_type = str(result_dict.get("decisionType", result.decision_type))
+
+            logger.info(
+                f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}"
+            )
 
             return result
             
