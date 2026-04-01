@@ -45,6 +45,7 @@ from src.report_language import (
 )
 from src.schemas.report_schema import AnalysisReportSchema
 from src.market_context import get_market_role, get_market_guidelines
+from src.result_guard import apply_score_guard, apply_data_completeness_guard
 
 logger = logging.getLogger(__name__)
 
