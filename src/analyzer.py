@@ -1266,10 +1266,10 @@ class GeminiAnalyzer:
             result_dict = apply_score_guard(result_dict)
 
             # 回写到 AnalysisResult，保证前端和日志看到的是一致结果
-            result.sentiment_score = int(result_dict.get("sentimentScore", result.sentiment_score))
-            result.trend_prediction = str(result_dict.get("trendPrediction", result.trend_prediction))
-            result.operation_advice = str(result_dict.get("operationAdvice", result.operation_advice))
-            result.decision_type = str(result_dict.get("decisionType", result.decision_type))
+            result.sentiment_score = int(result_dict.get("sentiment_score", result.sentiment_score))
+            result.trend_prediction = str(result_dict.get("trend_prediction", result.trend_prediction))
+            result.operation_advice = str(result_dict.get("operation_advice", result.operation_advice))
+            result.decision_type = str(result_dict.get("decision_type", result.decision_type))
 
             logger.info(
                 f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}"
