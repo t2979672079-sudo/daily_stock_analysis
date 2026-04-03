@@ -45,7 +45,6 @@ from src.report_language import (
 )
 from src.schemas.report_schema import AnalysisReportSchema
 from src.market_context import get_market_role, get_market_guidelines
-from src.result_guard import apply_score_guard, apply_data_completeness_guard
 
 logger = logging.getLogger(__name__)
 
@@ -1255,22 +1254,11 @@ class GeminiAnalyzer:
                     break
 
             persist_llm_usage(llm_usage, model_used, call_type="analysis", stock_code=code)
+            
+            logger.info(f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}")
 
-            # 统一后处理护栏：
-            # 1. 数据不完整时自动降级
-            # 2. 分数与动作强绑定，避免高分却观望/低分却看多
-            data_complete = bool(result.success)
-
-            result_dict = result.to_dict()
-            result_dict = apply_data_completeness_guard(result_dict, data_complete=data_complete)
-            result_dict = apply_score_guard(result_dict)
-
-            # 回写到 AnalysisResult，保证前端和日志看到的是一致结果
-            result.sentiment_score = int(result_dict.get("sentiment_score", result.sentiment_score))
-            result.trend_prediction = str(result_dict.get("trend_prediction", result.trend_prediction))
-            result.operation_advice = str(result_dict.get("operation_advice", result.operation_advice))
-            result.decision_type = str(result_dict.get("decision_type", result.decision_type))
-
+            return result
+            
             logger.info(
                 f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}"
             )
