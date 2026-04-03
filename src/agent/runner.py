@@ -687,3 +687,65 @@ def _execute_tools(
             pool.shutdown(wait=not timeout_triggered, cancel_futures=timeout_triggered)
 
     return results
+from copy import deepcopy
+
+def _sanitize_agent_messages(messages: list[dict]) -> list[dict]:
+    """
+    清洗多轮 tool-calling 消息，兼容 SiliconFlow / OpenAI-compatible 接口。
+    只保留标准字段，删除 reasoning_content / provider_specific_fields / 其他扩展字段。
+    """
+    cleaned: list[dict] = []
+
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+
+        role = msg.get("role")
+        if role not in {"system", "user", "assistant", "tool"}:
+            continue
+
+        new_msg = {"role": role}
+
+        if role in {"system", "user"}:
+            new_msg["content"] = msg.get("content", "") or ""
+
+        elif role == "assistant":
+            # 只保留标准字段
+            new_msg["content"] = msg.get("content", "") or ""
+
+            tool_calls = msg.get("tool_calls")
+            if tool_calls:
+                cleaned_tool_calls = []
+                for tc in tool_calls:
+                    if not isinstance(tc, dict):
+                        continue
+                    fn = tc.get("function") or {}
+                    cleaned_tc = {
+                        "id": tc.get("id"),
+                        "type": "function",
+                        "function": {
+                            "name": fn.get("name"),
+                            "arguments": fn.get("arguments", "") or "",
+                        },
+                    }
+                    cleaned_tool_calls.append(cleaned_tc)
+                if cleaned_tool_calls:
+                    new_msg["tool_calls"] = cleaned_tool_calls
+
+            # 不保留这些非标准字段：
+            # reasoning_content / provider_specific_fields / annotations / audio / refusal / index / etc.
+
+        elif role == "tool":
+            new_msg["tool_call_id"] = msg.get("tool_call_id")
+            content = msg.get("content", "")
+            if not isinstance(content, str):
+                try:
+                    import json
+                    content = json.dumps(content, ensure_ascii=False)
+                except Exception:
+                    content = str(content)
+            new_msg["content"] = content
+
+        cleaned.append(new_msg)
+
+    return cleaned
