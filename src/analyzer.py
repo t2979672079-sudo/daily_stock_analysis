@@ -1254,14 +1254,8 @@ class GeminiAnalyzer:
                     break
 
             persist_llm_usage(llm_usage, model_used, call_type="analysis", stock_code=code)
-            
-            logger.info(f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}")
 
-            return result
-            
-            logger.info(
-                f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}"
-            )
+            logger.info(f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}")
 
             return result
             
